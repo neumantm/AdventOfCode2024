@@ -1,3 +1,13 @@
+from enum import Enum
+import itertools
+
+
+class Operator(Enum):
+    ADDITION = 1
+    MULTIPLICATION = 2
+    CONCATINATION = 3
+
+
 def read_input() -> list[tuple[int, list[int]]]:
     result: list[tuple[int, list[int]]] = []
     with open("input.txt") as f:
@@ -7,16 +17,19 @@ def read_input() -> list[tuple[int, list[int]]]:
     return result
 
 
-def check_equation(required_result: int, operands: list[int], operator_possibility_num: int) -> bool:
+def check_equation(required_result: int, operands: list[int], operators: tuple[Operator, ...]) -> bool:
+    assert len(operands) == len(operators) + 1
+
     intermediate_result = operands[0]
-    num_operators = len(operands) - 1
     for i in range(1, len(operands)):
-        bit_mask = 1 << (num_operators - i)
-        is_mult = operator_possibility_num & bit_mask > 0
-        if is_mult:
+        if operators[i - 1] == Operator.MULTIPLICATION:
             intermediate_result *= operands[i]
-        else:
+        elif operators[i - 1] == Operator.ADDITION:
             intermediate_result += operands[i]
+        elif operators[i - 1] == Operator.CONCATINATION:
+            intermediate_result = int(str(intermediate_result) + str(operands[i]))
+        else:
+            assert False
         if intermediate_result > required_result:
             return False
     return intermediate_result == required_result
@@ -26,10 +39,9 @@ def check_if_equation_can_be_fulfilled(equation: tuple[int, list[int]]) -> bool:
     result = equation[0]
     operands = equation[1]
     num_operators = len(operands) - 1
-    possibilities = 2**num_operators
 
-    for i in range(possibilities):
-        if check_equation(result, operands, i):
+    for operator_sequence in itertools.product(list(Operator), repeat=num_operators):
+        if check_equation(result, operands, operator_sequence):
             return True
     return False
 
